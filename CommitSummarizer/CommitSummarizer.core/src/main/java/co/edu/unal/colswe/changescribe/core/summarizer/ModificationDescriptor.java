@@ -72,6 +72,11 @@ public class ModificationDescriptor {
 	private List<SourceCodeChange> addedRemovedFunctionalities;
 	private boolean onlyStructuralChanges = false;
 	
+	/**
+	 * 提取java文件中的源码改动
+	 * @param file
+	 * @param git
+	 */
 	public void extractDifferences(ChangedFile file, Git git) {
 		FileDistiller distiller = ChangeDistiller.createFileDistiller(Language.JAVA); 
 		try {
@@ -92,6 +97,9 @@ public class ModificationDescriptor {
 		changes = distiller.getSourceCodeChanges(); 
 	}
 	
+	/**
+	 * 修改ChangeFile中modifiedMethods参数，列举被修改的方法
+	 */
 	public void extractModifiedMethods() {
 		List<StructureEntityVersion> modifiedMethods = new ArrayList<StructureEntityVersion>();
 		file.setModifiedMethods(modifiedMethods);
@@ -116,6 +124,7 @@ public class ModificationDescriptor {
 		StringBuilder localDescription = new StringBuilder(Constants.EMPTY_STRING);
 		addedRemovedFunctionalities = new ArrayList<SourceCodeChange>();
 		if(changes != null) {
+			// 对源码改动进行解析
 		    for(SourceCodeChange change : changes) {
 		    	StringBuilder descTmp = new StringBuilder(Constants.EMPTY_STRING);
 		    	if(change instanceof Update) {
@@ -127,6 +136,7 @@ public class ModificationDescriptor {
 		    	} else if(change instanceof Insert) {
 		    		Insert insert = (Insert) change;
 		    		if(isStructuralChange(insert.getChangeType())) {
+		    			// 描述新增语句
 		    			describeInsert(descTmp, insert); 
 		    		}
 	    		} else if(change instanceof Delete) {
@@ -151,19 +161,24 @@ public class ModificationDescriptor {
 			    	}
 		    	}
 		    }
-		    if(addedRemovedFunctionalities != null && addedRemovedFunctionalities.size() > 0) {
-		    	describeCollateralChanges(desc);
-		    }
+		    
+		    // 描述被修改文件依赖的修改。暂时禁用，涉及到eclipse组件 
+//		    if(addedRemovedFunctionalities != null && addedRemovedFunctionalities.size() > 0) {
+//		    	describeCollateralChanges(desc);
+//		    }
+		    
+		    // 调整了一下输出格式
 		    if(!localDescription.toString().equals(Constants.EMPTY_STRING)) {
 		    	if(changes != null && changes.size() > 0) {
-					desc.insert(0, "Modifications to " + file.getName());
-					desc.append(Constants.NEW_LINE);
+					desc.insert(0, "Modifications to " + file.getName() + "\n");
 					desc.append(Constants.NEW_LINE);
 				} 
 		    	desc.append(Constants.NEW_LINE);
 		    }
 		}
-		System.out.println("Modification Descriptor: " + desc.toString());
+		
+		// 注释临时输出
+//		System.out.println("Modification Descriptor: " + desc.toString());
 		
 	}
 
@@ -522,7 +537,6 @@ public class ModificationDescriptor {
 			previousType = Utils.getFileContentOfLastCommit(file.getPath(), git.getRepository());
 			currentType = new File(file.getAbsolutePath());
 			distiller.extractClassifiedSourceCodeChanges(previousType, currentType);
-			System.out.println("success");
 		} catch (RevisionSyntaxException e) {
 			e.printStackTrace();
 		} catch (AmbiguousObjectException e) {
@@ -587,6 +601,10 @@ public class ModificationDescriptor {
 		return isUnUsed;
 	}
 	
+	/**
+	 * 描述依赖文件的改变，先禁用
+	 * @param descriptor
+	 */
 	private void describeCollateralChanges(StringBuilder descriptor) {
 		List<NamedMember> impactedElements = new ArrayList<NamedMember>();
 		StringBuilder localDescriptor = new StringBuilder(Constants.EMPTY_STRING); 

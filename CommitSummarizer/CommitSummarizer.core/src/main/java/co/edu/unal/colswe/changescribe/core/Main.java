@@ -31,7 +31,7 @@ public class Main {
 	private static SCMRepository repo ;
 	private static Set<ChangedFile> differences;
 	private static Git git;
-	private static String projectPath = "/home/fernando/git/test/";
+	private static String projectPath = "/Users/Daniel/runtime-EclipseApplication/ChangeScribeTest";
 	private static String[] parameters = {"repository", "output", "filterFactor", "olderVersionId", "newerVersionId"};
 	private static String olderVersionId;
 	private static String newerVersionId;
@@ -103,6 +103,10 @@ public class Main {
 		return isValid;
 	}
 
+	/**
+	 * 初始化git，并获取git diff
+	 * @return
+	 */
 	private static IStatus gettingRepositoryStatus() {
 		git = repo.getGit();
 		
@@ -129,13 +133,14 @@ public class Main {
 	}
 
 	public static void main(String[] args) {
-		if(null == args || args.length == 0 || !readParams(args)) {
-			System.err.println("Error in the input parameters");
-			return;
-		}
+//		if(null == args || args.length == 0 || !readParams(args)) {
+//			System.err.println("Error in the input parameters");
+//			return;
+//		}
 		try {
 			repo = new SCMRepository(projectPath);
 			
+			// 初始化git、differences，找到所有改动的java文件
 			gettingRepositoryStatus();
 			
 			RepositoryHistory.getRepositoryHistory(git);
@@ -144,10 +149,14 @@ public class Main {
 			summarizer.setProjectPath(projectPath);
 			if(null != differences && differences.size() > 0) {
 				ChangedFile [] changes = new ChangedFile[differences.size()];
+				// 核心代码 - summarize the differences
 				summarizer.summarize(differences.toArray(changes));
 			}
-			File output = new File(outputFile);
-			FileUtils.writeStringToFile(output, summarizer.getSummary());
+			
+			// 输出summarize
+//			File output = new File(outputFile);
+//			FileUtils.writeStringToFile(output, summarizer.getSummary());
+			System.out.println(summarizer.getSummary());
 		} catch (RuntimeException e1) {
 			System.err.println("Not found a repository in the path " + projectPath);
 		} catch (IOException e) {

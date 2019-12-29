@@ -12,6 +12,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.NoWorkTreeException;
 import org.eclipse.jgit.lib.Repository;
 
+import co.edu.unal.colswe.changescribe.core.Constants;
 import co.edu.unal.colswe.changescribe.core.ast.ProjectInformation;
 import co.edu.unal.colswe.changescribe.core.git.ChangedFile.TypeChange;
 
@@ -90,32 +91,50 @@ public class SCMRepository {
 		return git.status().call();
 	}
 	
+	/**
+	 * 找到所有改动过的java文件
+	 * @param repositoryStatus
+	 * @param rootPath
+	 * @return
+	 */
 	public static Set<ChangedFile> getDifferences(Status repositoryStatus, String rootPath) {
 		Set<ChangedFile> differences = new TreeSet<ChangedFile>();
 		
 		for (String string : repositoryStatus.getModified()) {
-			ChangedFile changedFile = new ChangedFile(string, TypeChange.MODIFIED.name(), rootPath);
-			differences.add(changedFile);
-			changedFile.setTypeChange(TypeChange.MODIFIED);
+			// 只保留.java文件，包括xml文件都过滤
+			if (string.endsWith(Constants.JAVA_EXTENSION)) {
+				ChangedFile changedFile = new ChangedFile(string, TypeChange.MODIFIED.name(), rootPath);
+				differences.add(changedFile);
+				System.out.println("modified path: " + changedFile.getPath());
+				changedFile.setTypeChange(TypeChange.MODIFIED);
+			}
 		}
 		
 		for (String string : repositoryStatus.getAdded()) {
-			ChangedFile changedFile = new ChangedFile(string, TypeChange.ADDED.name(), rootPath);
-			differences.add(changedFile);
-			changedFile.setTypeChange(TypeChange.ADDED);
+			if (string.endsWith(Constants.JAVA_EXTENSION)) {
+				ChangedFile changedFile = new ChangedFile(string, TypeChange.ADDED.name(), rootPath);
+				differences.add(changedFile);
+				System.out.println("added path: " + changedFile.getPath());
+				changedFile.setTypeChange(TypeChange.ADDED);
+			}
 		}
 		
 		for (String string : repositoryStatus.getUntracked()) {
-			ChangedFile changedFile = new ChangedFile(string, TypeChange.UNTRACKED.name(), rootPath);
-			differences.add(changedFile);
-			System.out.println("path: " + changedFile.getPath());
-			changedFile.setTypeChange(TypeChange.UNTRACKED);
+			if (string.endsWith(Constants.JAVA_EXTENSION)) {
+				ChangedFile changedFile = new ChangedFile(string, TypeChange.UNTRACKED.name(), rootPath);
+				differences.add(changedFile);
+				System.out.println("untracked path: " + changedFile.getPath());
+				changedFile.setTypeChange(TypeChange.UNTRACKED);
+			}
 		}
 		
 		for	(String string : repositoryStatus.getRemoved()) {
-			ChangedFile changedFile = new ChangedFile(string, TypeChange.REMOVED.name(), rootPath);
-			differences.add(changedFile);
-			changedFile.setTypeChange(TypeChange.REMOVED);
+			if (string.endsWith(Constants.JAVA_EXTENSION)) {
+				ChangedFile changedFile = new ChangedFile(string, TypeChange.REMOVED.name(), rootPath);
+				differences.add(changedFile);
+				System.out.println("removed path: " + changedFile.getPath());
+				changedFile.setTypeChange(TypeChange.REMOVED);
+			}
 		}
 		
 		return differences;

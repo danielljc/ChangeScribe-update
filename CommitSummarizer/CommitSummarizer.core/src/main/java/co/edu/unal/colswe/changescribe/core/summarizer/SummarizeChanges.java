@@ -66,7 +66,7 @@ public class SummarizeChanges {
 	private LinkedList<ChangedFile> modifiedFiles;
 	private LinkedList<ChangedFile> otherFiles;
 	private List<StereotypeIdentifier> typesProblem;
-	private String projectPath = "/Users/Daniel/runtime-EclipseApplication/test";
+	private String projectPath;
 	private boolean filtering;
 	private double filterFactor;
 	private String summary;
@@ -103,12 +103,18 @@ public class SummarizeChanges {
 		removeCreatedPackages();
 	}
 
+	/**
+	 * 核心代码的入口，被如下三个类调用过：1. Main; 2. SummarizeChangeListener; 3. SummarizeVersionChangesListener
+	 * 注解的含义：抑制没被使用过的代码的警告
+	 * @param differences
+	 */
 	@SuppressWarnings("unused")
 	public void summarize(final ChangedFile[] differences) {
 		initSummary(differences);
 		String currentPackage = Constants.EMPTY_STRING;
 		
 		if(null != projectPath && !projectPath.isEmpty()) {
+			// 通过命令行解析
 			analyzeForShell();
 		} else {
 			analyzeForPlugin();
@@ -145,6 +151,8 @@ public class SummarizeChanges {
 				e.printStackTrace();
 			}
 		}
+		
+		// 核心代码：组合Commit Message
 		composeCommitMessage();
 	}
 
@@ -236,8 +244,10 @@ public class SummarizeChanges {
 		StringBuilder desc = new StringBuilder(); 
 		int i = 1;
 		int j = 1;
+		// 判断是否为首次提交
 		boolean isInitialCommit = Utils.isInitialCommit(git); 
 		
+		// 忽略次分支
 		if(null == projectPath) {
 			Impact impact = new Impact(identifiers);
 			impact.setProject(ProjectInformation.getProject(ProjectInformation.getSelectedProject()));
@@ -256,7 +266,7 @@ public class SummarizeChanges {
 				continue;
 			}
 			if(i == 1) {
-				desc.append(" This change set is mainly composed of:  \n\n");
+				desc.append("This change set is mainly composed of:  \n\n");
 			}
 			if(currentPackage.trim().equals(Constants.EMPTY_STRING)) {
 				currentPackage = identifier.getValue().getParser().getCompilationUnit().getPackage().getName().getFullyQualifiedName();
@@ -277,18 +287,21 @@ public class SummarizeChanges {
 				j = 1;
 				i++;
 			}
+			
+			// 如果文件是modified类型，则执行如下操作
 			if(identifier.getValue().getScmOperation().equals(TypeChange.MODIFIED.toString())) {
 				ModificationDescriptor modificationDescriptor = new ModificationDescriptor();
 				modificationDescriptor.setDifferences(differences);
 				modificationDescriptor.setFile(identifier.getValue().getChangedFile());
 				modificationDescriptor.setGit(getGit());
 				if(olderVersionId == null) {
+					// 获取java文件中的源码改动
 					modificationDescriptor.extractDifferences(identifier.getValue().getChangedFile(), git);
 				} else {
 					modificationDescriptor.extractDifferencesBetweenVersions(identifier.getValue().getChangedFile(), git,
 							olderVersionId, newerVersionId);
 				}
-				
+				// 提取被修改的方法
 				modificationDescriptor.extractModifiedMethods();
 				modificationDescriptor.describe(i, j, descTmp);
 			} else {
